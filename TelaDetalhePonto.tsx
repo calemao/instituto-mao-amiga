@@ -1,18 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-
-type Ponto = {
-    nome: string;
-    endereco: string;
-    diasHorarios: string;
-    recebeDistribui: string;
-};
-
-const pontoMock: Ponto = {
-    nome: 'Ponto de Coleta Setor Bueno',
-    endereco: 'Rua T-30, próximo à Praça Cônego Vieira, Setor Bueno, Goiânia-GO',
-    diasHorarios: 'Segunda a sexta, das 8h às 17h',
-    recebeDistribui: 'Recebe roupas e calçados; distribui cestas básicas',
-};
+import { pontosMock, Ponto } from './TelaListaPontos';
 
 function DetalhePonto({ ponto }: { ponto: Ponto }) {
     return (
@@ -25,18 +12,23 @@ function DetalhePonto({ ponto }: { ponto: Ponto }) {
     );
 }
 
-export default function TelaDetalhePonto() {
-    return <DetalhePonto ponto={pontoMock} />;
+export default function TelaDetalhePonto({ route }: { route: any }) {
+    const { pontoId } = route.params;
+    const ponto = pontosMock.find((p) => p.id === pontoId);
+
+    if (!ponto) {
+        return (
+            <View style={styles.container}>
+                <Text>Ponto não encontrado.</Text>
+            </View>
+        );
+    }
+
+    return <DetalhePonto ponto={ponto} />;
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-    },
+    container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24 },
     nome: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', color: '#1B3A5C', marginBottom: 12 },
     endereco: { fontSize: 15, textAlign: 'center', color: '#333', marginBottom: 8 },
     diasHorarios: { fontSize: 14, textAlign: 'center', color: '#555', marginBottom: 8 },
