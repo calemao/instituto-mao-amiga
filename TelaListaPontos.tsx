@@ -1,4 +1,6 @@
-import { FlatList, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { FlatList, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export type Ponto = {
     id: string;
@@ -80,19 +82,112 @@ function PontoItem({ ponto, navigation }: { ponto: Ponto; navigation: any }) {
 }
 
 export default function TelaListaPontos({ navigation }: { navigation: any }) {
+    const [tipoItem, setTipoItem] = useState('');
+    const [quantidadeInput, setQuantidadeInput] = useState('');
+    const [pontoDestino, setPontoDestino] = useState('');
+    const [erro, setErro] = useState('');
+    const [sucesso, setSucesso] = useState('');
+
+    function validarCadastro() {
+        setSucesso('');
+
+        if (tipoItem.trim() === '') {
+            setErro('Informe o tipo do item doado.');
+            return;
+        }
+
+        const quantidadeNumerica = Number(quantidadeInput.trim());
+        if (
+            quantidadeInput.trim() === '' ||
+            isNaN(quantidadeNumerica) ||
+            !Number.isInteger(quantidadeNumerica) ||
+            quantidadeNumerica <= 0
+        ) {
+            setErro('A quantidade precisa ser um número inteiro maior que zero (ex.: 3).');
+            return;
+        }
+
+        if (pontoDestino.trim() === '') {
+            setErro('Informe o ponto de destino da doação.');
+            return;
+        }
+
+        setErro('');
+        setSucesso('Doação registrada com sucesso!');
+        setTipoItem('');
+        setQuantidadeInput('');
+        setPontoDestino('');
+        Keyboard.dismiss();
+    }
+
     return (
-        <FlatList
-            data={pontosMock}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <PontoItem ponto={item} navigation={navigation} />}
-            contentContainerStyle={styles.container}
-        />
+        <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <FlatList
+                        data={pontosMock}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => <PontoItem ponto={item} navigation={navigation} />}
+                        contentContainerStyle={styles.container}
+                        keyboardShouldPersistTaps="handled"
+                        ListHeaderComponent={
+                            <>
+                                <Text style={styles.tituloCadastro}>Cadastrar doação</Text>
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Tipo do item (ex.: roupas, alimentos)"
+                                    value={tipoItem}
+                                    onChangeText={setTipoItem}
+                                />
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Quantidade (ex.: 3)"
+                                    value={quantidadeInput}
+                                    onChangeText={setQuantidadeInput}
+                                    keyboardType="number-pad"
+                                />
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Ponto de destino (ex.: Ponto de Coleta Setor Bueno)"
+                                    value={pontoDestino}
+                                    onChangeText={setPontoDestino}
+                                />
+
+                                {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
+                                {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
+
+                                <TouchableOpacity style={styles.botaoCadastrar} onPress={validarCadastro}>
+                                    <Text style={styles.botaoCadastrarTexto}>Registrar doação</Text>
+                                </TouchableOpacity>
+
+                                <Text style={styles.tituloLista}>Pontos de coleta</Text>
+                            </>
+                        }
+                    />
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: '#fff' },
+    flex: { flex: 1 },
     container: { alignItems: 'center', padding: 16 },
-    item: { marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%' },
+    tituloCadastro: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, alignSelf: 'flex-start' },
+    input: { borderWidth: 1, borderColor: '#CCC', borderRadius: 6, padding: 10, fontSize: 14, width: '100%', marginBottom: 8, minHeight: 44 },
+    erro: { color: '#C62828', fontSize: 13, marginBottom: 8, alignSelf: 'flex-start' },
+    sucesso: { color: '#2E7D32', fontSize: 13, marginBottom: 8, alignSelf: 'flex-start' },
+    botaoCadastrar: { backgroundColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', width: '100%', marginBottom: 24, minHeight: 44, justifyContent: 'center' },
+    botaoCadastrarTexto: { color: '#fff', fontWeight: 'bold' },
+    tituloLista: { fontSize: 16, fontWeight: 'bold', color: '#1B3A5C', marginBottom: 12, alignSelf: 'flex-start' },
+    item: { marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%', minHeight: 44, justifyContent: 'center' },
     nome: { fontSize: 16, fontWeight: 'bold', color: '#1B3A5C', textAlign: 'center' },
     endereco: { fontSize: 13, color: '#666', textAlign: 'center', marginTop: 4 },
 });
