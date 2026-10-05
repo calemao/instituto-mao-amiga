@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FlatList, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { salvarDoacao, listarDoacoes } from './doacoesStorage';
 
 export type Ponto = {
     id: string;
@@ -88,7 +89,17 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
     const [erro, setErro] = useState('');
     const [sucesso, setSucesso] = useState('');
 
-    function validarCadastro() {
+    // ---- VERIFICAÇÃO TEMPORÁRIA DA ISSUE #08 — remover depois de confirmar ----
+    // useEffect(() => {
+    //     async function verificarDoacoesSalvas() {
+    //         const doacoes = await listarDoacoes();
+    //         console.log('[VERIFICAÇÃO #08] Doações salvas:', doacoes);
+    //     }
+    //    verificarDoacoesSalvas();
+    // }, []);
+    // ---- FIM DA VERIFICAÇÃO TEMPORÁRIA ----
+
+    async function validarCadastro() {
         setSucesso('');
 
         if (tipoItem.trim() === '') {
@@ -111,6 +122,14 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
             setErro('Informe o ponto de destino da doação.');
             return;
         }
+
+        await salvarDoacao({
+            id: Date.now().toString(),
+            tipoItem,
+            quantidade: quantidadeNumerica,
+            pontoDestino,
+            criadoEm: new Date().toISOString(),
+        });
 
         setErro('');
         setSucesso('Doação registrada com sucesso!');
@@ -142,6 +161,7 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
                                     placeholder="Tipo do item (ex.: roupas, alimentos)"
                                     value={tipoItem}
                                     onChangeText={setTipoItem}
+                                    disableFullscreenUI
                                 />
 
                                 <TextInput
@@ -150,6 +170,7 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
                                     value={quantidadeInput}
                                     onChangeText={setQuantidadeInput}
                                     keyboardType="number-pad"
+                                    disableFullscreenUI
                                 />
 
                                 <TextInput
@@ -157,6 +178,7 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
                                     placeholder="Ponto de destino (ex.: Ponto de Coleta Setor Bueno)"
                                     value={pontoDestino}
                                     onChangeText={setPontoDestino}
+                                    disableFullscreenUI
                                 />
 
                                 {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
