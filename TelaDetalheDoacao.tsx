@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Doacao, listarDoacoes, excluirDoacao } from './doacoesStorage';
@@ -46,16 +46,16 @@ export default function TelaDetalheDoacao({ route, navigation }: { route: any; n
     if (!doacao) {
         return (
             <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
-                <View style={styles.container}>
+                <ScrollView contentContainerStyle={styles.container}>
                     <Text style={styles.valor}>Carregando...</Text>
-                </View>
+                </ScrollView>
             </SafeAreaView>
         );
     }
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
-            <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.container}>
                 <Text style={styles.label}>Tipo do item</Text>
                 <Text style={styles.valor}>{doacao.tipoItem}</Text>
 
@@ -81,7 +81,7 @@ export default function TelaDetalheDoacao({ route, navigation }: { route: any; n
                 <TouchableOpacity style={styles.botaoExcluir} onPress={confirmarExclusao}>
                     <Text style={styles.botaoExcluirTexto}>Excluir doação</Text>
                 </TouchableOpacity>
-            </View>
+            </ScrollView>
         </SafeAreaView>
     );
 }
