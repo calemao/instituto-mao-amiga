@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FlatList, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { salvarDoacao, listarDoacoes } from './doacoesStorage';
+import { salvarDoacao } from './doacoesStorage';
 
 export type Ponto = {
     id: string;
