@@ -1,6 +1,8 @@
+import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Doacao, excluirDoacao } from './doacoesStorage';
+import { useFocusEffect } from '@react-navigation/native';
+import { Doacao, listarDoacoes, excluirDoacao } from './doacoesStorage';
 
 function formatarData(criadoEm: string) {
     const data = new Date(criadoEm);
@@ -8,9 +10,22 @@ function formatarData(criadoEm: string) {
 }
 
 export default function TelaDetalheDoacao({ route, navigation }: { route: any; navigation: any }) {
-    const doacao: Doacao = route.params.doacao;
+    const { doacaoId } = route.params;
+    const [doacao, setDoacao] = React.useState<Doacao | null>(null);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            async function carregar() {
+                const lista = await listarDoacoes();
+                const encontrada = lista.find((d) => d.id === doacaoId) ?? null;
+                setDoacao(encontrada);
+            }
+            carregar();
+        }, [doacaoId])
+    );
 
     function confirmarExclusao() {
+        if (!doacao) return;
         Alert.alert(
             'Excluir doação',
             'Tem certeza que deseja excluir esta doação? Essa ação não pode ser desfeita.',
@@ -25,6 +40,16 @@ export default function TelaDetalheDoacao({ route, navigation }: { route: any; n
                     },
                 },
             ]
+        );
+    }
+
+    if (!doacao) {
+        return (
+            <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
+                <View style={styles.container}>
+                    <Text style={styles.valor}>Carregando...</Text>
+                </View>
+            </SafeAreaView>
         );
     }
 
@@ -46,6 +71,13 @@ export default function TelaDetalheDoacao({ route, navigation }: { route: any; n
                 <Text style={styles.label}>ID</Text>
                 <Text style={styles.valorPequeno}>{doacao.id}</Text>
 
+                <TouchableOpacity
+                    style={styles.botaoEditar}
+                    onPress={() => navigation.push('ListaPontos', { doacaoParaEditar: doacao })}
+                >
+                    <Text style={styles.botaoEditarTexto}>Editar doação</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.botaoExcluir} onPress={confirmarExclusao}>
                     <Text style={styles.botaoExcluirTexto}>Excluir doação</Text>
                 </TouchableOpacity>
@@ -60,14 +92,8 @@ const styles = StyleSheet.create({
     label: { fontSize: 13, color: '#888', marginTop: 16 },
     valor: { fontSize: 18, fontWeight: '600', color: '#1B3A5C', marginTop: 2 },
     valorPequeno: { fontSize: 12, color: '#999', marginTop: 2 },
-    botaoExcluir: {
-        backgroundColor: '#C62828',
-        padding: 12,
-        borderRadius: 6,
-        alignItems: 'center',
-        marginTop: 32,
-        minHeight: 44,
-        justifyContent: 'center',
-    },
+    botaoEditar: { backgroundColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', marginTop: 32, minHeight: 44, justifyContent: 'center' },
+    botaoEditarTexto: { color: '#fff', fontWeight: 'bold' },
+    botaoExcluir: { backgroundColor: '#C62828', padding: 12, borderRadius: 6, alignItems: 'center', marginTop: 12, minHeight: 44, justifyContent: 'center' },
     botaoExcluirTexto: { color: '#fff', fontWeight: 'bold' },
 });

@@ -29,3 +29,11 @@ export async function excluirDoacao(id: string): Promise<void> {
     const doacoesRestantes = doacoesAtuais.filter((doacao) => doacao.id !== id);
     await AsyncStorage.setItem(CHAVE_DOACOES, JSON.stringify(doacoesRestantes));
 }
+
+export async function atualizarDoacao(doacaoAtualizada: Doacao): Promise<void> {
+    const doacoesAtuais = await listarDoacoes();
+    const doacoesAtualizadas = doacoesAtuais.map((doacao) =>
+        doacao.id === doacaoAtualizada.id ? doacaoAtualizada : doacao
+    );
+    await AsyncStorage.setItem(CHAVE_DOACOES, JSON.stringify(doacoesAtualizadas));
+}

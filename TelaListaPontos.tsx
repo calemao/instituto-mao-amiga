@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { salvarDoacao } from './doacoesStorage';
+import { salvarDoacao, atualizarDoacao } from './doacoesStorage';
 
 export type Ponto = {
     id: string;
@@ -82,13 +82,26 @@ function PontoItem({ ponto, navigation }: { ponto: Ponto; navigation: any }) {
     );
 }
 
-export default function TelaListaPontos({ navigation }: { navigation: any }) {
+export default function TelaListaPontos({ navigation, route }: { navigation: any; route: any }) {
     const [tipoItem, setTipoItem] = useState('');
     const [quantidadeInput, setQuantidadeInput] = useState('');
     const [pontoDestino, setPontoDestino] = useState('');
     const [erro, setErro] = useState('');
     const [sucesso, setSucesso] = useState('');
+    const [editandoId, setEditandoId] = useState<string | null>(null);
+    const [editandoCriadoEm, setEditandoCriadoEm] = useState<string | null>(null);
 
+    useEffect(() => {
+        const doacaoParaEditar = route?.params?.doacaoParaEditar;
+        if (doacaoParaEditar) {
+            setTipoItem(doacaoParaEditar.tipoItem);
+            setQuantidadeInput(String(doacaoParaEditar.quantidade));
+            setPontoDestino(doacaoParaEditar.pontoDestino);
+            setEditandoId(doacaoParaEditar.id);
+            setEditandoCriadoEm(doacaoParaEditar.criadoEm);
+            navigation.setOptions({ title: 'Editar doação' });
+        }
+    }, []);
 
     async function validarCadastro() {
         setSucesso('');
@@ -111,6 +124,19 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
 
         if (pontoDestino.trim() === '') {
             setErro('Informe o ponto de destino da doação.');
+            return;
+        }
+
+        if (editandoId) {
+            await atualizarDoacao({
+                id: editandoId,
+                tipoItem,
+                quantidade: quantidadeNumerica,
+                pontoDestino,
+                criadoEm: editandoCriadoEm ?? new Date().toISOString(),
+            });
+            Keyboard.dismiss();
+            navigation.goBack();
             return;
         }
 
@@ -145,7 +171,9 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
                         keyboardShouldPersistTaps="handled"
                         ListHeaderComponent={
                             <>
-                                <Text style={styles.tituloCadastro}>Cadastrar doação</Text>
+                                <Text style={styles.tituloCadastro}>
+                                    {editandoId ? 'Editar doação' : 'Cadastrar doação'}
+                                </Text>
 
                                 <TextInput
                                     style={styles.input}
@@ -176,15 +204,25 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
                                 {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
 
                                 <TouchableOpacity style={styles.botaoCadastrar} onPress={validarCadastro}>
-                                    <Text style={styles.botaoCadastrarTexto}>Registrar doação</Text>
+                                    <Text style={styles.botaoCadastrarTexto}>
+                                        {editandoId ? 'Salvar alterações' : 'Registrar doação'}
+                                    </Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity
-                                    style={styles.botaoHistorico}
-                                    onPress={() => navigation.navigate('MinhasDoacoes')}
-                                >
-                                    <Text style={styles.botaoHistoricoTexto}>Ver minhas doações</Text>
-                                </TouchableOpacity>
+                                {editandoId && (
+                                    <TouchableOpacity style={styles.botaoCancelar} onPress={() => navigation.goBack()}>
+                                        <Text style={styles.botaoCancelarTexto}>Cancelar edição</Text>
+                                    </TouchableOpacity>
+                                )}
+
+                                {!editandoId && (
+                                    <TouchableOpacity
+                                        style={styles.botaoHistorico}
+                                        onPress={() => navigation.navigate('MinhasDoacoes')}
+                                    >
+                                        <Text style={styles.botaoHistoricoTexto}>Ver minhas doações</Text>
+                                    </TouchableOpacity>
+                                )}
 
                                 <Text style={styles.tituloLista}>Pontos de coleta</Text>
                             </>
@@ -204,12 +242,14 @@ const styles = StyleSheet.create({
     input: { borderWidth: 1, borderColor: '#CCC', borderRadius: 6, padding: 10, fontSize: 14, width: '100%', marginBottom: 8, minHeight: 44 },
     erro: { color: '#C62828', fontSize: 13, marginBottom: 8, alignSelf: 'flex-start' },
     sucesso: { color: '#2E7D32', fontSize: 13, marginBottom: 8, alignSelf: 'flex-start' },
-    botaoCadastrar: { backgroundColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', width: '100%', marginBottom: 24, minHeight: 44, justifyContent: 'center' },
+    botaoCadastrar: { backgroundColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', width: '100%', minHeight: 44, justifyContent: 'center' },
     botaoCadastrarTexto: { color: '#fff', fontWeight: 'bold' },
-    tituloLista: { fontSize: 16, fontWeight: 'bold', color: '#1B3A5C', marginBottom: 12, alignSelf: 'flex-start' },
-    item: { marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%', minHeight: 44, justifyContent: 'center' },
+    botaoCancelar: { borderWidth: 1, borderColor: '#999', padding: 12, borderRadius: 6, alignItems: 'center', width: '100%', marginTop: 8, marginBottom: 24, minHeight: 44, justifyContent: 'center' },
+    botaoCancelarTexto: { color: '#555', fontWeight: '600' },
+    botaoHistorico: { borderWidth: 1, borderColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', width: '100%', marginTop: 8, marginBottom: 24, minHeight: 44, justifyContent: 'center' },
+    botaoHistoricoTexto: { color: '#1B3A5C', fontWeight: '600' },
+    item: { alignItems: 'center', marginBottom: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%' },
     nome: { fontSize: 16, fontWeight: 'bold', color: '#1B3A5C', textAlign: 'center' },
     endereco: { fontSize: 13, color: '#666', textAlign: 'center', marginTop: 4 },
-    botaoHistorico: { borderWidth: 1, borderColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', width: '100%', marginBottom: 24, minHeight: 44, justifyContent: 'center' },
-    botaoHistoricoTexto: { color: '#1B3A5C', fontWeight: '600' },
+    tituloLista: { fontSize: 16, fontWeight: 'bold', color: '#1B3A5C', marginBottom: 12, alignSelf: 'flex-start' },
 });

@@ -63,7 +63,7 @@ export default function TelaMinhasDoacoes({ navigation }: { navigation: any }) {
                 renderItem={({ item }) => (
                     <DoacaoItem
                         doacao={item}
-                        onPress={() => navigation.navigate('DetalheDoacao', { doacao: item })}
+                        onPress={() => navigation.navigate('DetalheDoacao', { doacaoId: item.id })}
                     />
                 )}
                 contentContainerStyle={styles.container}
