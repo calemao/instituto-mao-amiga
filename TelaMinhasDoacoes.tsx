@@ -26,6 +26,45 @@ const DoacaoItem = React.memo(function DoacaoItem({
     );
 });
 
+type TotalPorTipo = { tipo: string; quantidade: number; doacoes: number };
+
+function calcularTotaisPorTipo(doacoes: Doacao[]): TotalPorTipo[] {
+    const mapa = new Map<string, TotalPorTipo>();
+
+    for (const doacao of doacoes) {
+        const chave = doacao.tipoItem.trim().toLowerCase();
+        const existente = mapa.get(chave);
+        if (existente) {
+            existente.quantidade += doacao.quantidade;
+            existente.doacoes += 1;
+        } else {
+            mapa.set(chave, { tipo: doacao.tipoItem, quantidade: doacao.quantidade, doacoes: 1 });
+        }
+    }
+
+    return Array.from(mapa.values()).sort((a, b) => b.quantidade - a.quantidade);
+}
+
+function Resumo({ doacoes }: { doacoes: Doacao[] }) {
+    const totais = calcularTotaisPorTipo(doacoes);
+
+    return (
+        <View style={styles.resumoContainer}>
+            <Text style={styles.resumoTitulo}>Resumo</Text>
+            <Text style={styles.resumoTotal}>Total de doações: {doacoes.length}</Text>
+
+            {totais.map((item) => (
+                <View key={item.tipo} style={styles.resumoLinha}>
+                    <Text style={styles.resumoTipo}>{item.tipo}</Text>
+                    <Text style={styles.resumoDetalhe}>
+                        {item.quantidade} {item.quantidade === 1 ? 'unidade' : 'unidades'} · {item.doacoes} {item.doacoes === 1 ? 'doação' : 'doações'}
+                    </Text>
+                </View>
+            ))}
+        </View>
+    );
+}
+
 export default function TelaMinhasDoacoes({ navigation }: { navigation: any }) {
     const [doacoes, setDoacoes] = React.useState<Doacao[]>([]);
     const [carregando, setCarregando] = React.useState(true);
@@ -96,6 +135,7 @@ export default function TelaMinhasDoacoes({ navigation }: { navigation: any }) {
                                 )}
                                 contentContainerStyle={styles.container}
                                 keyboardShouldPersistTaps="handled"
+                                ListHeaderComponent={<Resumo doacoes={doacoes} />}
                             />
                         )}
                     </View>
@@ -111,6 +151,17 @@ const styles = StyleSheet.create({
     buscaContainer: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
     inputBusca: { borderWidth: 1, borderColor: '#CCC', borderRadius: 6, padding: 10, fontSize: 14, minHeight: 44 },
     container: { padding: 16, paddingTop: 0 },
+    resumoContainer: {
+        backgroundColor: '#F5F7FA',
+        borderRadius: 8,
+        padding: 14,
+        marginBottom: 16,
+    },
+    resumoTitulo: { fontSize: 16, fontWeight: 'bold', color: '#1B3A5C', marginBottom: 4 },
+    resumoTotal: { fontSize: 14, color: '#444', marginBottom: 8 },
+    resumoLinha: { marginTop: 6 },
+    resumoTipo: { fontSize: 14, fontWeight: '600', color: '#1B3A5C' },
+    resumoDetalhe: { fontSize: 13, color: '#666' },
     item: {
         marginBottom: 12,
         padding: 12,
