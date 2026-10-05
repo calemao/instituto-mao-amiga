@@ -9,14 +9,20 @@ function formatarData(criadoEm: string) {
     return data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-const DoacaoItem = React.memo(function DoacaoItem({ doacao }: { doacao: Doacao }) {
+const DoacaoItem = React.memo(function DoacaoItem({
+    doacao,
+    onPress,
+}: {
+    doacao: Doacao;
+    onPress: () => void;
+}) {
     return (
-        <View style={styles.item}>
+        <TouchableOpacity style={styles.item} onPress={onPress}>
             <Text style={styles.tipoItem}>{doacao.tipoItem}</Text>
             <Text style={styles.detalhe}>Quantidade: {doacao.quantidade}</Text>
             <Text style={styles.detalhe}>Destino: {doacao.pontoDestino}</Text>
             <Text style={styles.data}>{formatarData(doacao.criadoEm)}</Text>
-        </View>
+        </TouchableOpacity>
     );
 });
 
@@ -54,7 +60,12 @@ export default function TelaMinhasDoacoes({ navigation }: { navigation: any }) {
             <FlatList
                 data={doacoes}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <DoacaoItem doacao={item} />}
+                renderItem={({ item }) => (
+                    <DoacaoItem
+                        doacao={item}
+                        onPress={() => navigation.navigate('DetalheDoacao', { doacao: item })}
+                    />
+                )}
                 contentContainerStyle={styles.container}
             />
         </SafeAreaView>
