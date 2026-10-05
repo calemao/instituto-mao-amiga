@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { listarDoacoes, Doacao } from './doacoesStorage';
@@ -29,6 +29,7 @@ const DoacaoItem = React.memo(function DoacaoItem({
 export default function TelaMinhasDoacoes({ navigation }: { navigation: any }) {
     const [doacoes, setDoacoes] = React.useState<Doacao[]>([]);
     const [carregando, setCarregando] = React.useState(true);
+    const [busca, setBusca] = React.useState('');
 
     useFocusEffect(
         React.useCallback(() => {
@@ -40,6 +41,10 @@ export default function TelaMinhasDoacoes({ navigation }: { navigation: any }) {
             }
             carregar();
         }, [])
+    );
+
+    const doacoesFiltradas = doacoes.filter((doacao) =>
+        doacao.tipoItem.toLowerCase().includes(busca.trim().toLowerCase())
     );
 
     if (!carregando && doacoes.length === 0) {
@@ -57,24 +62,55 @@ export default function TelaMinhasDoacoes({ navigation }: { navigation: any }) {
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
-            <FlatList
-                data={doacoes}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <DoacaoItem
-                        doacao={item}
-                        onPress={() => navigation.navigate('DetalheDoacao', { doacaoId: item.id })}
-                    />
-                )}
-                contentContainerStyle={styles.container}
-            />
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={styles.flex}>
+                        <View style={styles.buscaContainer}>
+                            <TextInput
+                                style={styles.inputBusca}
+                                placeholder="🔎 Buscar por tipo de item"
+                                value={busca}
+                                onChangeText={setBusca}
+                                disableFullscreenUI
+                            />
+                        </View>
+
+                        {doacoesFiltradas.length === 0 ? (
+                            <View style={styles.vazioContainer}>
+                                <Text style={styles.vazioTexto}>
+                                    Nenhuma doação encontrada para "{busca}".
+                                </Text>
+                            </View>
+                        ) : (
+                            <FlatList
+                                data={doacoesFiltradas}
+                                keyExtractor={(item) => item.id}
+                                renderItem={({ item }) => (
+                                    <DoacaoItem
+                                        doacao={item}
+                                        onPress={() => navigation.navigate('DetalheDoacao', { doacaoId: item.id })}
+                                    />
+                                )}
+                                contentContainerStyle={styles.container}
+                                keyboardShouldPersistTaps="handled"
+                            />
+                        )}
+                    </View>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#fff' },
-    container: { padding: 16 },
+    flex: { flex: 1 },
+    buscaContainer: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+    inputBusca: { borderWidth: 1, borderColor: '#CCC', borderRadius: 6, padding: 10, fontSize: 14, minHeight: 44 },
+    container: { padding: 16, paddingTop: 0 },
     item: {
         marginBottom: 12,
         padding: 12,
