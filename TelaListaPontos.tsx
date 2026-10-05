@@ -89,15 +89,6 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
     const [erro, setErro] = useState('');
     const [sucesso, setSucesso] = useState('');
 
-    // ---- VERIFICAÇÃO TEMPORÁRIA DA ISSUE #08 — remover depois de confirmar ----
-    // useEffect(() => {
-    //     async function verificarDoacoesSalvas() {
-    //         const doacoes = await listarDoacoes();
-    //         console.log('[VERIFICAÇÃO #08] Doações salvas:', doacoes);
-    //     }
-    //    verificarDoacoesSalvas();
-    // }, []);
-    // ---- FIM DA VERIFICAÇÃO TEMPORÁRIA ----
 
     async function validarCadastro() {
         setSucesso('');
@@ -188,6 +179,13 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
                                     <Text style={styles.botaoCadastrarTexto}>Registrar doação</Text>
                                 </TouchableOpacity>
 
+                                <TouchableOpacity
+                                    style={styles.botaoHistorico}
+                                    onPress={() => navigation.navigate('MinhasDoacoes')}
+                                >
+                                    <Text style={styles.botaoHistoricoTexto}>Ver minhas doações</Text>
+                                </TouchableOpacity>
+
                                 <Text style={styles.tituloLista}>Pontos de coleta</Text>
                             </>
                         }
@@ -212,4 +210,6 @@ const styles = StyleSheet.create({
     item: { marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%', minHeight: 44, justifyContent: 'center' },
     nome: { fontSize: 16, fontWeight: 'bold', color: '#1B3A5C', textAlign: 'center' },
     endereco: { fontSize: 13, color: '#666', textAlign: 'center', marginTop: 4 },
+    botaoHistorico: { borderWidth: 1, borderColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', width: '100%', marginBottom: 24, minHeight: 44, justifyContent: 'center' },
+    botaoHistoricoTexto: { color: '#1B3A5C', fontWeight: '600' },
 });
