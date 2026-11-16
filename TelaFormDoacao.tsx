@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { camposDoErro, mensagemDoErro, statusDoErro } from './src/services/api';
 import { cadastrar, buscarPorId, editar } from './src/services/doacoesService';
@@ -24,6 +24,20 @@ export default function TelaFormDoacao({ navigation, route }: { navigation: any;
 
     const [carregando, setCarregando] = useState(editando);
     const [erroCarga, setErroCarga] = useState('');
+
+    const quantidadeRef = useRef<ComponentRef<typeof TextInput>>(null);
+    const [tecladoAberto, setTecladoAberto] = useState(false);
+
+    // O teclado numérico não tem tecla de confirmar, então a barra "Fechar teclado"
+    // aparece enquanto ele está aberto para sempre haver um jeito de acessar os botões.
+    useEffect(() => {
+        const abriu = Keyboard.addListener('keyboardDidShow', () => setTecladoAberto(true));
+        const fechou = Keyboard.addListener('keyboardDidHide', () => setTecladoAberto(false));
+        return () => {
+            abriu.remove();
+            fechou.remove();
+        };
+    }, []);
 
     const carregarPontos = useCallback(async () => {
         setCarregandoPontos(true);
@@ -133,9 +147,18 @@ export default function TelaFormDoacao({ navigation, route }: { navigation: any;
         <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
             <KeyboardAvoidingView
                 style={styles.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                behavior="padding"
             >
-                <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+                {tecladoAberto && (
+                    <TouchableOpacity style={styles.fecharTeclado} onPress={Keyboard.dismiss}>
+                        <Text style={styles.fecharTecladoTexto}>Fechar teclado</Text>
+                    </TouchableOpacity>
+                )}
+                <ScrollView
+                    contentContainerStyle={styles.container}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                >
                     <Text style={styles.titulo}>{editando ? 'Editar doação' : 'Registrar doação'}</Text>
 
                     <TextInput
@@ -143,15 +166,20 @@ export default function TelaFormDoacao({ navigation, route }: { navigation: any;
                         placeholder="Tipo do item (ex.: roupas, alimentos)"
                         value={tipoItem}
                         onChangeText={setTipoItem}
+                        returnKeyType="next"
+                        onSubmitEditing={() => quantidadeRef.current?.focus()}
                         disableFullscreenUI
                     />
 
                     <TextInput
+                        ref={quantidadeRef}
                         style={styles.input}
                         placeholder="Quantidade (ex.: 3)"
                         value={quantidadeInput}
                         onChangeText={setQuantidadeInput}
                         keyboardType="number-pad"
+                        returnKeyType="done"
+                        onSubmitEditing={() => Keyboard.dismiss()}
                         disableFullscreenUI
                     />
 
@@ -236,6 +264,8 @@ const styles = StyleSheet.create({
     flex: { flex: 1 },
     container: { alignItems: 'center', padding: 16 },
     centro: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
+    fecharTeclado: { backgroundColor: '#E8EEF4', paddingVertical: 10, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+    fecharTecladoTexto: { color: '#1B3A5C', fontWeight: 'bold' },
     titulo: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, alignSelf: 'flex-start' },
     input: { borderWidth: 1, borderColor: '#CCC', borderRadius: 6, padding: 10, fontSize: 14, width: '100%', marginBottom: 8, minHeight: 44 },
     rotulo: { fontSize: 14, fontWeight: '600', color: '#333', alignSelf: 'flex-start', marginBottom: 6, marginTop: 4 },
