@@ -7,6 +7,7 @@ import TelaMinhasDoacoes from './TelaMinhasDoacoes';
 import TelaDetalheDoacao from './TelaDetalheDoacao';
 import TelaFormDoacao from './TelaFormDoacao';
 import TelaFormPonto from './TelaFormPonto';
+import TelaMeusPontos from './TelaMeusPontos';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,6 +29,11 @@ export default function App() {
           name="FormPonto"
           component={TelaFormPonto}
           options={{ title: 'Cadastrar ponto' }}
+        />
+        <Stack.Screen
+          name="MeusPontos"
+          component={TelaMeusPontos}
+          options={{ title: 'Meus pontos' }}
         />
         <Stack.Screen
           name="FormDoacao"

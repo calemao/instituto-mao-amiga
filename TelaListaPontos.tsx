@@ -2,19 +2,34 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import BotaoFavorito from './BotaoFavorito';
 import { mensagemDoErro } from './src/services/api';
+import { alternar, listarIds } from './src/services/favoritosService';
 import { buscarPagina, Ponto, versaoDosPontos } from './src/services/pontosService';
 
-function PontoItem({ ponto, navigation }: { ponto: Ponto; navigation: any }) {
+function PontoItem({
+    ponto,
+    favorito,
+    onAlternarFavorito,
+    navigation,
+}: {
+    ponto: Ponto;
+    favorito: boolean;
+    onAlternarFavorito: () => void;
+    navigation: any;
+}) {
     return (
-        <TouchableOpacity
-            style={styles.item}
-            onPress={() => navigation.navigate('DetalhePonto', { pontoId: ponto.id })}
-        >
-            <Text style={styles.nome}>{ponto.nome}</Text>
-            <Text style={styles.endereco}>{ponto.endereco}</Text>
-            <Text style={styles.tipo}>{ponto.bairro} · {ponto.tipo}</Text>
-        </TouchableOpacity>
+        <View style={styles.item}>
+            <TouchableOpacity
+                style={styles.itemTexto}
+                onPress={() => navigation.navigate('DetalhePonto', { pontoId: ponto.id })}
+            >
+                <Text style={styles.nome}>{ponto.nome}</Text>
+                <Text style={styles.endereco}>{ponto.endereco}</Text>
+                <Text style={styles.tipo}>{ponto.bairro} · {ponto.tipo}</Text>
+            </TouchableOpacity>
+            <BotaoFavorito favorito={favorito} onPress={onAlternarFavorito} />
+        </View>
     );
 }
 
@@ -28,6 +43,7 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
     const [carregandoMais, setCarregandoMais] = useState(false);
     const [erro, setErro] = useState('');
     const [erroMais, setErroMais] = useState('');
+    const [favoritos, setFavoritos] = useState<string[]>([]);
 
     // Número da busca em andamento: respostas de buscas antigas são descartadas.
     const requisicaoAtual = useRef(0);
@@ -110,6 +126,26 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
         }, [filtro, carregarPrimeiraPagina])
     );
 
+    // Os ids favoritos vêm do aparelho; ao voltar de "Meus pontos" ou do detalhe, leem-se de novo.
+    useFocusEffect(
+        useCallback(() => {
+            listarIds().then(setFavoritos).catch(() => {});
+        }, [])
+    );
+
+    async function alternarFavorito(pontoId: string) {
+        try {
+            const agoraFavorito = await alternar(pontoId);
+            setFavoritos((atual) =>
+                agoraFavorito
+                    ? atual.includes(pontoId) ? atual : [...atual, pontoId]
+                    : atual.filter((id) => id !== pontoId)
+            );
+        } catch {
+            // não conseguiu gravar no aparelho: o coração continua como estava
+        }
+    }
+
     function renderizarCorpo() {
         if (carregando) {
             return (
@@ -135,7 +171,15 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
             <FlatList
                 data={pontos}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <PontoItem ponto={item} navigation={navigation} />}
+                extraData={favoritos}
+                renderItem={({ item }) => (
+                    <PontoItem
+                        ponto={item}
+                        favorito={favoritos.includes(item.id)}
+                        onAlternarFavorito={() => alternarFavorito(item.id)}
+                        navigation={navigation}
+                    />
+                )}
                 contentContainerStyle={styles.container}
                 keyboardShouldPersistTaps="handled"
                 onEndReached={() => carregarMais()}
@@ -178,6 +222,9 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
                     <TouchableOpacity style={styles.botaoPrimario} onPress={() => navigation.navigate('FormPonto')}>
                         <Text style={styles.botaoPrimarioTexto}>Novo ponto</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity style={styles.botaoSecundario} onPress={() => navigation.navigate('MeusPontos')}>
+                        <Text style={styles.botaoSecundarioTexto}>Meus pontos</Text>
+                    </TouchableOpacity>
                 </View>
                 <View style={styles.linhaBotoes}>
                     <TouchableOpacity style={styles.botaoSecundario} onPress={() => navigation.navigate('FormDoacao')}>
@@ -207,7 +254,8 @@ const styles = StyleSheet.create({
     textoApoio: { fontSize: 14, color: '#666', textAlign: 'center', marginTop: 8 },
     erro: { color: '#C62828', fontSize: 14, textAlign: 'center' },
     rodape: { paddingVertical: 16, alignItems: 'center', gap: 8, width: '100%' },
-    item: { alignItems: 'center', marginBottom: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%' },
+    item: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%' },
+    itemTexto: { flex: 1, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
     nome: { fontSize: 16, fontWeight: 'bold', color: '#1B3A5C', textAlign: 'center' },
     endereco: { fontSize: 13, color: '#666', textAlign: 'center', marginTop: 4 },
     tipo: { fontSize: 12, color: '#2E7D32', fontWeight: '600', textAlign: 'center', marginTop: 4 },

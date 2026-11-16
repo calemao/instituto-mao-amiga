@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import BotaoFavorito from './BotaoFavorito';
 import { mensagemDoErro, statusDoErro } from './src/services/api';
+import { alternar, listarIds } from './src/services/favoritosService';
 import { buscarPorId, excluir, Ponto } from './src/services/pontosService';
 
 export default function TelaDetalhePonto({ navigation, route }: { navigation: any; route: any }) {
@@ -11,6 +13,7 @@ export default function TelaDetalhePonto({ navigation, route }: { navigation: an
     const [erro, setErro] = useState('');
     const [erroAcao, setErroAcao] = useState('');
     const [excluindo, setExcluindo] = useState(false);
+    const [favorito, setFavorito] = useState(false);
 
     const carregar = useCallback(async () => {
         try {
@@ -28,8 +31,19 @@ export default function TelaDetalhePonto({ navigation, route }: { navigation: an
     useFocusEffect(
         useCallback(() => {
             carregar();
-        }, [carregar])
+            listarIds()
+                .then((ids) => setFavorito(ids.includes(pontoId)))
+                .catch(() => {});
+        }, [carregar, pontoId])
     );
+
+    async function alternarFavorito() {
+        try {
+            setFavorito(await alternar(pontoId));
+        } catch {
+            // não conseguiu gravar no aparelho: o coração continua como estava
+        }
+    }
 
     function pedirConfirmacaoExclusao() {
         if (!ponto) return;
@@ -82,6 +96,7 @@ export default function TelaDetalhePonto({ navigation, route }: { navigation: an
 
     return (
         <View style={styles.container}>
+            <BotaoFavorito favorito={favorito} onPress={alternarFavorito} />
             <Text style={styles.nome}>{ponto.nome}</Text>
             <Text style={styles.endereco}>{ponto.endereco}</Text>
             <Text style={styles.detalhe}>Bairro: {ponto.bairro}</Text>
