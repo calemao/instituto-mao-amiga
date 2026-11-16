@@ -1,74 +1,9 @@
-import { useEffect, useState } from 'react';
-import { FlatList, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { salvarDoacao, atualizarDoacao } from './doacoesStorage';
-
-export type Ponto = {
-    id: string;
-    nome: string;
-    endereco: string;
-    diasHorarios: string;
-    recebeDistribui: string;
-};
-
-export const pontosMock: Ponto[] = [
-    {
-        id: '1',
-        nome: 'Ponto de Coleta Setor Bueno',
-        endereco: 'Rua T-30, nº 1200, Setor Bueno, Goiânia-GO, CEP 74223-060',
-        diasHorarios: 'Segunda a sexta, das 8h às 17h',
-        recebeDistribui: 'Recebe roupas e calçados; distribui cestas básicas',
-    },
-    {
-        id: '2',
-        nome: 'Ponto de Coleta Vila Nova',
-        endereco: 'Avenida Anhanguera, nº 3400, Vila Nova, Goiânia-GO, CEP 74643-030',
-        diasHorarios: 'Sábados, das 7h às 12h',
-        recebeDistribui: 'Recebe alimentos não perecíveis; distribui cestas básicas',
-    },
-    {
-        id: '3',
-        nome: 'Ponto de Coleta Setor Campinas',
-        endereco: 'Rua 3, nº 450, esquina com Avenida Goiás, Setor Campinas, Goiânia-GO, CEP 74513-090',
-        diasHorarios: 'Terça, quinta e sábado, das 9h às 15h',
-        recebeDistribui: 'Recebe roupas de inverno e cobertores; distribui agasalhos',
-    },
-    {
-        id: '4',
-        nome: 'Ponto de Coleta Setor Sul',
-        endereco: 'Avenida 85, nº 1500, Setor Sul, Goiânia-GO, CEP 74083-005',
-        diasHorarios: 'Segunda, quarta e sexta, das 14h às 18h',
-        recebeDistribui: 'Recebe brinquedos e material escolar; distribui kits escolares',
-    },
-    {
-        id: '5',
-        nome: 'Ponto de Coleta Jardim América',
-        endereco: 'Rua 90, nº 320, Jardim América, Goiânia-GO, CEP 74275-110',
-        diasHorarios: 'Terça e quinta, das 8h às 12h',
-        recebeDistribui: 'Recebe móveis e utensílios domésticos; distribui kits de casa nova',
-    },
-    {
-        id: '6',
-        nome: 'Ponto de Coleta Setor Pedro Ludovico',
-        endereco: 'Avenida Engler, nº 780, Setor Pedro Ludovico, Goiânia-GO, CEP 74830-070',
-        diasHorarios: 'Segunda a sábado, das 9h às 16h',
-        recebeDistribui: 'Recebe produtos de higiene pessoal; distribui kits de higiene',
-    },
-    {
-        id: '7',
-        nome: 'Ponto de Coleta Setor Coimbra',
-        endereco: 'Rua Coimbra, nº 210, Setor Coimbra, Goiânia-GO, CEP 74535-110',
-        diasHorarios: 'Quarta e sexta, das 13h às 17h',
-        recebeDistribui: 'Recebe cobertores e agasalhos; distribui kits de inverno',
-    },
-    {
-        id: '8',
-        nome: 'Ponto de Coleta Setor Marista',
-        endereco: 'Rua 9, nº 1330, Setor Marista, Goiânia-GO, CEP 74150-030',
-        diasHorarios: 'Sábados e domingos, das 8h às 13h',
-        recebeDistribui: 'Recebe alimentos e roupas; distribui cestas básicas e roupas',
-    },
-];
+import { useFocusEffect } from '@react-navigation/native';
+import { mensagemDoErro } from './src/services/api';
+import { buscarPagina, Ponto, versaoDosPontos } from './src/services/pontosService';
 
 function PontoItem({ ponto, navigation }: { ponto: Ponto; navigation: any }) {
     return (
@@ -78,178 +13,197 @@ function PontoItem({ ponto, navigation }: { ponto: Ponto; navigation: any }) {
         >
             <Text style={styles.nome}>{ponto.nome}</Text>
             <Text style={styles.endereco}>{ponto.endereco}</Text>
+            <Text style={styles.tipo}>{ponto.bairro} · {ponto.tipo}</Text>
         </TouchableOpacity>
     );
 }
 
-export default function TelaListaPontos({ navigation, route }: { navigation: any; route: any }) {
-    const [tipoItem, setTipoItem] = useState('');
-    const [quantidadeInput, setQuantidadeInput] = useState('');
-    const [pontoDestino, setPontoDestino] = useState('');
+export default function TelaListaPontos({ navigation }: { navigation: any }) {
+    const [busca, setBusca] = useState('');
+    const [filtro, setFiltro] = useState('');
+    const [pontos, setPontos] = useState<Ponto[]>([]);
+    const [paginaAtual, setPaginaAtual] = useState(0);
+    const [totalPaginas, setTotalPaginas] = useState(0);
+    const [carregando, setCarregando] = useState(true);
+    const [carregandoMais, setCarregandoMais] = useState(false);
     const [erro, setErro] = useState('');
-    const [sucesso, setSucesso] = useState('');
-    const [editandoId, setEditandoId] = useState<string | null>(null);
-    const [editandoCriadoEm, setEditandoCriadoEm] = useState<string | null>(null);
+    const [erroMais, setErroMais] = useState('');
 
-    useEffect(() => {
-        const doacaoParaEditar = route?.params?.doacaoParaEditar;
-        if (doacaoParaEditar) {
-            setTipoItem(doacaoParaEditar.tipoItem);
-            setQuantidadeInput(String(doacaoParaEditar.quantidade));
-            setPontoDestino(doacaoParaEditar.pontoDestino);
-            setEditandoId(doacaoParaEditar.id);
-            setEditandoCriadoEm(doacaoParaEditar.criadoEm);
-            navigation.setOptions({ title: 'Editar doação' });
+    // Número da busca em andamento: respostas de buscas antigas são descartadas.
+    const requisicaoAtual = useRef(0);
+    // Trava contra pedir a mesma página duas vezes (onEndReached pode disparar em sequência).
+    const carregandoMaisRef = useRef(false);
+    // Versão dos pontos na última vez que a lista foi buscada.
+    const versaoVista = useRef(-1);
+
+    const carregarPrimeiraPagina = useCallback(async (filtroBusca: string) => {
+        const id = ++requisicaoAtual.current;
+        carregandoMaisRef.current = false;
+        versaoVista.current = versaoDosPontos();
+        setCarregando(true);
+        setCarregandoMais(false);
+        setErro('');
+        setErroMais('');
+        try {
+            const pagina = await buscarPagina(filtroBusca, 0);
+            if (id !== requisicaoAtual.current) return;
+            setPontos(pagina.content);
+            setPaginaAtual(pagina.page.number);
+            setTotalPaginas(pagina.page.totalPages);
+        } catch (e) {
+            if (id !== requisicaoAtual.current) return;
+            setPontos([]);
+            setPaginaAtual(0);
+            setTotalPaginas(0);
+            setErro(mensagemDoErro(e));
+        } finally {
+            if (id === requisicaoAtual.current) setCarregando(false);
         }
     }, []);
 
-    async function validarCadastro() {
-        setSucesso('');
+    async function carregarMais(ignorarErro: boolean = false) {
+        if (carregando || carregandoMaisRef.current) return;
+        if (erro !== '' || (erroMais !== '' && !ignorarErro)) return;
+        if (pontos.length === 0 || paginaAtual + 1 >= totalPaginas) return;
 
-        if (tipoItem.trim() === '') {
-            setErro('Informe o tipo do item doado.');
-            return;
-        }
-
-        const quantidadeNumerica = Number(quantidadeInput.trim());
-        if (
-            quantidadeInput.trim() === '' ||
-            isNaN(quantidadeNumerica) ||
-            !Number.isInteger(quantidadeNumerica) ||
-            quantidadeNumerica <= 0
-        ) {
-            setErro('A quantidade precisa ser um número inteiro maior que zero (ex.: 3).');
-            return;
-        }
-
-        if (pontoDestino.trim() === '') {
-            setErro('Informe o ponto de destino da doação.');
-            return;
-        }
-
-        if (editandoId) {
-            await atualizarDoacao({
-                id: editandoId,
-                tipoItem,
-                quantidade: quantidadeNumerica,
-                pontoDestino,
-                criadoEm: editandoCriadoEm ?? new Date().toISOString(),
+        const id = requisicaoAtual.current;
+        const proxima = paginaAtual + 1;
+        carregandoMaisRef.current = true;
+        setErroMais('');
+        setCarregandoMais(true);
+        try {
+            const pagina = await buscarPagina(filtro, proxima);
+            if (id !== requisicaoAtual.current) return;
+            setPontos((atual) => {
+                const existentes = new Set(atual.map((p) => p.id));
+                return [...atual, ...pagina.content.filter((p) => !existentes.has(p.id))];
             });
-            Keyboard.dismiss();
-            navigation.goBack();
-            return;
+            setPaginaAtual(proxima);
+            setTotalPaginas(pagina.page.totalPages);
+        } catch (e) {
+            if (id === requisicaoAtual.current) setErroMais(mensagemDoErro(e));
+        } finally {
+            if (id === requisicaoAtual.current) {
+                carregandoMaisRef.current = false;
+                setCarregandoMais(false);
+            }
+        }
+    }
+
+    // Espera o usuário parar de digitar antes de buscar na API.
+    useEffect(() => {
+        const temporizador = setTimeout(() => setFiltro(busca.trim()), 400);
+        return () => clearTimeout(temporizador);
+    }, [busca]);
+
+    // Cada busca nova volta para a primeira página.
+    useEffect(() => {
+        carregarPrimeiraPagina(filtro);
+    }, [filtro, carregarPrimeiraPagina]);
+
+    // Ao voltar de outra tela, busca de novo só se algum ponto foi criado, editado ou excluído.
+    useFocusEffect(
+        useCallback(() => {
+            if (versaoVista.current !== -1 && versaoVista.current !== versaoDosPontos()) {
+                carregarPrimeiraPagina(filtro);
+            }
+        }, [filtro, carregarPrimeiraPagina])
+    );
+
+    function renderizarCorpo() {
+        if (carregando) {
+            return (
+                <View style={styles.centro}>
+                    <ActivityIndicator size="large" color="#1B3A5C" />
+                    <Text style={styles.textoApoio}>Carregando pontos...</Text>
+                </View>
+            );
         }
 
-        await salvarDoacao({
-            id: Date.now().toString(),
-            tipoItem,
-            quantidade: quantidadeNumerica,
-            pontoDestino,
-            criadoEm: new Date().toISOString(),
-        });
+        if (erro !== '') {
+            return (
+                <View style={styles.centro}>
+                    <Text style={styles.erro}>{erro}</Text>
+                    <TouchableOpacity style={styles.botaoSecundario} onPress={() => carregarPrimeiraPagina(filtro)}>
+                        <Text style={styles.botaoSecundarioTexto}>Tentar novamente</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
 
-        setErro('');
-        setSucesso('Doação registrada com sucesso!');
-        setTipoItem('');
-        setQuantidadeInput('');
-        setPontoDestino('');
-        Keyboard.dismiss();
+        return (
+            <FlatList
+                data={pontos}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => <PontoItem ponto={item} navigation={navigation} />}
+                contentContainerStyle={styles.container}
+                keyboardShouldPersistTaps="handled"
+                onEndReached={() => carregarMais()}
+                onEndReachedThreshold={0.5}
+                ListEmptyComponent={
+                    <Text style={styles.textoApoio}>
+                        {filtro !== '' ? 'Nenhum ponto encontrado para essa busca.' : 'Nenhum ponto cadastrado ainda.'}
+                    </Text>
+                }
+                ListFooterComponent={
+                    carregandoMais ? (
+                        <ActivityIndicator style={styles.rodape} color="#1B3A5C" />
+                    ) : erroMais !== '' ? (
+                        <View style={styles.rodape}>
+                            <Text style={styles.erro}>{erroMais}</Text>
+                            <TouchableOpacity style={styles.botaoSecundario} onPress={() => carregarMais(true)}>
+                                <Text style={styles.botaoSecundarioTexto}>Tentar novamente</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : undefined
+                }
+            />
+        );
     }
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
-            <KeyboardAvoidingView
-                style={styles.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <FlatList
-                        data={pontosMock}
-                        keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => <PontoItem ponto={item} navigation={navigation} />}
-                        contentContainerStyle={styles.container}
-                        keyboardShouldPersistTaps="handled"
-                        ListHeaderComponent={
-                            <>
-                                <Text style={styles.tituloCadastro}>
-                                    {editandoId ? 'Editar doação' : 'Cadastrar doação'}
-                                </Text>
-
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Tipo do item (ex.: roupas, alimentos)"
-                                    value={tipoItem}
-                                    onChangeText={setTipoItem}
-                                    disableFullscreenUI
-                                />
-
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Quantidade (ex.: 3)"
-                                    value={quantidadeInput}
-                                    onChangeText={setQuantidadeInput}
-                                    keyboardType="number-pad"
-                                    disableFullscreenUI
-                                />
-
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ponto de destino (ex.: Ponto de Coleta Setor Bueno)"
-                                    value={pontoDestino}
-                                    onChangeText={setPontoDestino}
-                                    disableFullscreenUI
-                                />
-
-                                {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
-                                {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
-
-                                <TouchableOpacity style={styles.botaoCadastrar} onPress={validarCadastro}>
-                                    <Text style={styles.botaoCadastrarTexto}>
-                                        {editandoId ? 'Salvar alterações' : 'Registrar doação'}
-                                    </Text>
-                                </TouchableOpacity>
-
-                                {editandoId && (
-                                    <TouchableOpacity style={styles.botaoCancelar} onPress={() => navigation.goBack()}>
-                                        <Text style={styles.botaoCancelarTexto}>Cancelar edição</Text>
-                                    </TouchableOpacity>
-                                )}
-
-                                {!editandoId && (
-                                    <TouchableOpacity
-                                        style={styles.botaoHistorico}
-                                        onPress={() => navigation.navigate('MinhasDoacoes')}
-                                    >
-                                        <Text style={styles.botaoHistoricoTexto}>Ver minhas doações</Text>
-                                    </TouchableOpacity>
-                                )}
-
-                                <Text style={styles.tituloLista}>Pontos de coleta</Text>
-                            </>
-                        }
-                    />
-                </TouchableWithoutFeedback>
-            </KeyboardAvoidingView>
+            <View style={styles.topo}>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Buscar por nome ou bairro"
+                    value={busca}
+                    onChangeText={setBusca}
+                    autoCorrect={false}
+                    returnKeyType="search"
+                    onSubmitEditing={() => Keyboard.dismiss()}
+                    disableFullscreenUI
+                />
+                <View style={styles.linhaBotoes}>
+                    <TouchableOpacity style={styles.botaoPrimario} onPress={() => navigation.navigate('FormDoacao')}>
+                        <Text style={styles.botaoPrimarioTexto}>Registrar doação</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.botaoSecundario} onPress={() => navigation.navigate('MinhasDoacoes')}>
+                        <Text style={styles.botaoSecundarioTexto}>Minhas doações</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+            {renderizarCorpo()}
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#fff' },
-    flex: { flex: 1 },
-    container: { alignItems: 'center', padding: 16 },
-    tituloCadastro: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, alignSelf: 'flex-start' },
+    topo: { padding: 16, paddingBottom: 8 },
     input: { borderWidth: 1, borderColor: '#CCC', borderRadius: 6, padding: 10, fontSize: 14, width: '100%', marginBottom: 8, minHeight: 44 },
-    erro: { color: '#C62828', fontSize: 13, marginBottom: 8, alignSelf: 'flex-start' },
-    sucesso: { color: '#2E7D32', fontSize: 13, marginBottom: 8, alignSelf: 'flex-start' },
-    botaoCadastrar: { backgroundColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', width: '100%', minHeight: 44, justifyContent: 'center' },
-    botaoCadastrarTexto: { color: '#fff', fontWeight: 'bold' },
-    botaoCancelar: { borderWidth: 1, borderColor: '#999', padding: 12, borderRadius: 6, alignItems: 'center', width: '100%', marginTop: 8, marginBottom: 24, minHeight: 44, justifyContent: 'center' },
-    botaoCancelarTexto: { color: '#555', fontWeight: '600' },
-    botaoHistorico: { borderWidth: 1, borderColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', width: '100%', marginTop: 8, marginBottom: 24, minHeight: 44, justifyContent: 'center' },
-    botaoHistoricoTexto: { color: '#1B3A5C', fontWeight: '600' },
+    linhaBotoes: { flexDirection: 'row', gap: 8 },
+    botaoPrimario: { flex: 1, backgroundColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+    botaoPrimarioTexto: { color: '#fff', fontWeight: 'bold' },
+    botaoSecundario: { flex: 1, borderWidth: 1, borderColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+    botaoSecundarioTexto: { color: '#1B3A5C', fontWeight: '600' },
+    container: { alignItems: 'center', padding: 16 },
+    centro: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
+    textoApoio: { fontSize: 14, color: '#666', textAlign: 'center', marginTop: 8 },
+    erro: { color: '#C62828', fontSize: 14, textAlign: 'center' },
+    rodape: { paddingVertical: 16, alignItems: 'center', gap: 8, width: '100%' },
     item: { alignItems: 'center', marginBottom: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%' },
     nome: { fontSize: 16, fontWeight: 'bold', color: '#1B3A5C', textAlign: 'center' },
     endereco: { fontSize: 13, color: '#666', textAlign: 'center', marginTop: 4 },
-    tituloLista: { fontSize: 16, fontWeight: 'bold', color: '#1B3A5C', marginBottom: 12, alignSelf: 'flex-start' },
+    tipo: { fontSize: 12, color: '#2E7D32', fontWeight: '600', textAlign: 'center', marginTop: 4 },
 });

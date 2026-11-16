@@ -73,7 +73,7 @@ export default function TelaDetalheDoacao({ route, navigation }: { route: any; n
 
                 <TouchableOpacity
                     style={styles.botaoEditar}
-                    onPress={() => navigation.push('ListaPontos', { doacaoParaEditar: doacao })}
+                    onPress={() => navigation.push('FormDoacao', { doacaoParaEditar: doacao })}
                 >
                     <Text style={styles.botaoEditarTexto}>Editar doação</Text>
                 </TouchableOpacity>
