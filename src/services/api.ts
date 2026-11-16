@@ -1,7 +1,7 @@
 // Único arquivo do app que chama fetch. A URL do servidor fica aqui, num lugar só.
 // No celular, troque pelo IP do computador na rede local (ipconfig -> "Endereço IPv4").
 // Não use localhost: no celular, localhost é o próprio aparelho.
-export const API_URL = 'http://10.144.28.108:8080';
+export const API_URL = 'http://192.168.1.120:8080';
 
 const BASE = `${API_URL}/api/v1`;
 const TEMPO_LIMITE_MS = 8000;
