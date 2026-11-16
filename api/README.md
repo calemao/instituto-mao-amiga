@@ -88,9 +88,218 @@ Todas as respostas de erro têm o mesmo formato:
 
 A resposta tem o formato `content` (a lista da página) + `page` (`size`, `number`, `totalElements` e `totalPages`).
 
-### Exemplos de chamadas
+### Chamadas e respostas reais
 
-1. Sem filtro: `http://localhost:8080/api/v1/pontos/filtro`
-2. Filtrando por bairro: `http://localhost:8080/api/v1/pontos/filtro?filtro=bueno`
-3. Segunda página: `http://localhost:8080/api/v1/pontos/filtro?page=1&size=10`
-4. Ordenando por bairro: `http://localhost:8080/api/v1/pontos/filtro?sort=bairro,asc`
+Respostas obtidas com a API rodando e a carga inicial de 25 pontos.
+
+**1. Sem filtro (duas por página)**
+
+`GET http://localhost:8080/api/v1/pontos/filtro?size=2` → **200**
+
+```json
+{
+  "content": [
+    {
+      "id": "bd0b5578-98f8-411e-9f9a-73842de3c120",
+      "nome": "Ponto de Coleta Cidade Jardim",
+      "endereco": "Rua CJ-3, nº 77, Cidade Jardim, Goiânia-GO",
+      "bairro": "Cidade Jardim",
+      "horario": "Sábados e domingos, das 8h às 12h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "78e02098-c0c1-489a-9bb0-d178d2c35165",
+      "nome": "Ponto de Coleta Jardim América",
+      "endereco": "Rua 90, nº 320, Jardim América, Goiânia-GO, CEP 74275-110",
+      "bairro": "Jardim América",
+      "horario": "Terça e quinta, das 8h às 12h",
+      "tipo": "coleta"
+    }
+  ],
+  "page": {
+    "size": 2,
+    "number": 0,
+    "totalElements": 25,
+    "totalPages": 13
+  }
+}
+```
+
+**2. Filtrando por bairro**
+
+`GET http://localhost:8080/api/v1/pontos/filtro?filtro=bueno` → **200**
+
+```json
+{
+  "content": [
+    {
+      "id": "aeae5ffa-c6e3-4bfe-972d-3a5964bbb917",
+      "nome": "Ponto de Coleta Setor Bueno",
+      "endereco": "Rua T-30, nº 1200, Setor Bueno, Goiânia-GO, CEP 74223-060",
+      "bairro": "Setor Bueno",
+      "horario": "Segunda a sexta, das 8h às 17h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "27457b7b-dd9a-4ccc-b869-40bb64a5546f",
+      "nome": "Ponto de Distribuição Setor Bueno",
+      "endereco": "Rua T-55, nº 340, Setor Bueno, Goiânia-GO",
+      "bairro": "Setor Bueno",
+      "horario": "Terça e quinta, das 14h às 18h",
+      "tipo": "distribuição"
+    }
+  ],
+  "page": {
+    "size": 10,
+    "number": 0,
+    "totalElements": 2,
+    "totalPages": 1
+  }
+}
+```
+
+**3. Segunda página**
+
+`GET http://localhost:8080/api/v1/pontos/filtro?page=1&size=10` → **200**
+
+```json
+{
+  "content": [
+    {
+      "id": "f544c626-5546-4a16-bbab-2ed76f044082",
+      "nome": "Ponto de Coleta Setor Marista",
+      "endereco": "Rua 9, nº 1330, Setor Marista, Goiânia-GO, CEP 74150-030",
+      "bairro": "Setor Marista",
+      "horario": "Sábados e domingos, das 8h às 13h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "f876b2d4-f55c-4ee0-abb8-582b946dd0d3",
+      "nome": "Ponto de Coleta Setor Negrão de Lima",
+      "endereco": "Rua NL-2, nº 60, Setor Negrão de Lima, Goiânia-GO",
+      "bairro": "Setor Negrão de Lima",
+      "horario": "Segunda a sexta, das 8h às 14h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "c6f4262a-a0e5-4181-acc7-d283e1ae4141",
+      "nome": "Ponto de Coleta Setor Oeste",
+      "endereco": "Rua 5, nº 410, Setor Oeste, Goiânia-GO",
+      "bairro": "Setor Oeste",
+      "horario": "Segunda a sexta, das 9h às 17h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "ded118a7-7a36-46ba-9bf2-5b74a111e1e9",
+      "nome": "Ponto de Coleta Setor Universitário",
+      "endereco": "Avenida Universitária, nº 1500, Setor Universitário, Goiânia-GO",
+      "bairro": "Setor Universitário",
+      "horario": "Segunda a sexta, das 10h às 16h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "5eb9ba19-5b00-4562-8a98-2f12d346432b",
+      "nome": "Ponto de Coleta Setor dos Funcionários",
+      "endereco": "Rua 32, nº 210, Setor dos Funcionários, Goiânia-GO",
+      "bairro": "Setor dos Funcionários",
+      "horario": "Segunda a sexta, das 9h às 15h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "aee0ffcd-858c-4987-96a5-fc1620fef7fe",
+      "nome": "Ponto de Coleta Vila Nova",
+      "endereco": "Avenida Anhanguera, nº 3400, Vila Nova, Goiânia-GO, CEP 74643-030",
+      "bairro": "Vila Nova",
+      "horario": "Sábados, das 7h às 12h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "0f066b5f-f458-49fa-b3cb-8cdba4b4adc8",
+      "nome": "Ponto de Coleta Vila Rosa",
+      "endereco": "Rua 12, nº 45, Vila Rosa, Goiânia-GO",
+      "bairro": "Vila Rosa",
+      "horario": "Segunda, quarta e sexta, das 8h às 11h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "4070cf4e-3e07-4785-849b-40997d60a5c9",
+      "nome": "Ponto de Distribuição Jardim Goiás",
+      "endereco": "Rua 17, nº 250, Jardim Goiás, Goiânia-GO",
+      "bairro": "Jardim Goiás",
+      "horario": "Sábados, das 8h às 12h",
+      "tipo": "distribuição"
+    },
+    {
+      "id": "d903cec2-1856-46e2-808e-b48439119186",
+      "nome": "Ponto de Distribuição Jardim Novo Mundo",
+      "endereco": "Rua JN-4, nº 120, Jardim Novo Mundo, Goiânia-GO",
+      "bairro": "Jardim Novo Mundo",
+      "horario": "Domingos, das 8h às 12h",
+      "tipo": "distribuição"
+    },
+    {
+      "id": "2c170634-16ec-4d01-a493-b01895bad563",
+      "nome": "Ponto de Distribuição Residencial Eldorado",
+      "endereco": "Rua RE-10, nº 150, Residencial Eldorado, Goiânia-GO",
+      "bairro": "Residencial Eldorado",
+      "horario": "Quartas, das 14h às 18h",
+      "tipo": "distribuição"
+    }
+  ],
+  "page": {
+    "size": 10,
+    "number": 1,
+    "totalElements": 25,
+    "totalPages": 3
+  }
+}
+```
+
+**4. Ordenando por bairro**
+
+`GET http://localhost:8080/api/v1/pontos/filtro?sort=bairro,asc&size=3` → **200**
+
+```json
+{
+  "content": [
+    {
+      "id": "bd0b5578-98f8-411e-9f9a-73842de3c120",
+      "nome": "Ponto de Coleta Cidade Jardim",
+      "endereco": "Rua CJ-3, nº 77, Cidade Jardim, Goiânia-GO",
+      "bairro": "Cidade Jardim",
+      "horario": "Sábados e domingos, das 8h às 12h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "78e02098-c0c1-489a-9bb0-d178d2c35165",
+      "nome": "Ponto de Coleta Jardim América",
+      "endereco": "Rua 90, nº 320, Jardim América, Goiânia-GO, CEP 74275-110",
+      "bairro": "Jardim América",
+      "horario": "Terça e quinta, das 8h às 12h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "4070cf4e-3e07-4785-849b-40997d60a5c9",
+      "nome": "Ponto de Distribuição Jardim Goiás",
+      "endereco": "Rua 17, nº 250, Jardim Goiás, Goiânia-GO",
+      "bairro": "Jardim Goiás",
+      "horario": "Sábados, das 8h às 12h",
+      "tipo": "distribuição"
+    }
+  ],
+  "page": {
+    "size": 3,
+    "number": 0,
+    "totalElements": 25,
+    "totalPages": 9
+  }
+}
+```
+
+**Campo de ordenação inexistente**
+
+`GET http://localhost:8080/api/v1/pontos/filtro?sort=campoInexistente` → **400**
+
+```json
+{ "status": 400, "mensagem": "Campo de ordenação inválido." }
+```
