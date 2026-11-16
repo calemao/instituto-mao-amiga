@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -43,7 +44,8 @@ public class DoacaoService {
         Doacao doacao = new Doacao();
         preencher(doacao, dto);
         // A data de cadastro é do servidor: não vem do app e não muda nas edições.
-        doacao.setCriadoEm(LocalDateTime.now());
+        // Cortada em microssegundos, a precisão do banco, para a resposta do cadastro ser igual às leituras seguintes.
+        doacao.setCriadoEm(LocalDateTime.now().truncatedTo(ChronoUnit.MICROS));
         return DoacaoResponseDTO.from(repository.save(doacao));
     }
 
