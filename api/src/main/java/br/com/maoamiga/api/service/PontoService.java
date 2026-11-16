@@ -5,6 +5,10 @@ import br.com.maoamiga.api.dto.PontoResponseDTO;
 import br.com.maoamiga.api.entity.Ponto;
 import br.com.maoamiga.api.repository.PontoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +27,15 @@ public class PontoService {
     @Transactional(readOnly = true)
     public List<PontoResponseDTO> listar() {
         return repository.findAll().stream().map(PontoResponseDTO::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PontoResponseDTO> buscarPorFiltro(String filtro, Pageable pageable) {
+        String termo = filtro == null ? "" : filtro.trim().toUpperCase(Locale.ROOT);
+        // O desempate por id mantém a ordem estável entre as páginas quando há nomes ou bairros repetidos.
+        Pageable estavel = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                pageable.getSort().and(Sort.by("id")));
+        return repository.buscarPorFiltro(termo, estavel).map(PontoResponseDTO::from);
     }
 
     @Transactional(readOnly = true)

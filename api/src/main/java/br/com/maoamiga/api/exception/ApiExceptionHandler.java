@@ -2,6 +2,8 @@ package br.com.maoamiga.api.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -41,6 +43,13 @@ public class ApiExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErroResponse> parametroInvalido(MethodArgumentTypeMismatchException e) {
         return resposta(HttpStatus.BAD_REQUEST, "O valor informado para '" + e.getName() + "' é inválido.", null);
+    }
+
+    // sort=campoQueNaoExiste -> 400. O Spring Data pode lançar a exceção direta ou embrulhada
+    // em InvalidDataAccessApiUsageException, por isso os dois casos.
+    @ExceptionHandler({PropertyReferenceException.class, InvalidDataAccessApiUsageException.class})
+    public ResponseEntity<ErroResponse> ordenacaoInvalida(Exception e) {
+        return resposta(HttpStatus.BAD_REQUEST, "Campo de ordenação inválido.", null);
     }
 
     // Ponto não encontrado e outros erros lançados de propósito (404 etc.).

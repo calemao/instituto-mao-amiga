@@ -21,7 +21,7 @@ Na pasta `api/`:
 
 Ou, no IntelliJ IDEA, abra a pasta `api/` como projeto Maven e execute a classe `MaoAmigaApiApplication`.
 
-A API sobe em `http://localhost:8080`. A carga inicial cria os pontos de Goiânia na primeira execução e **não duplica** nas seguintes.
+A API sobe em `http://localhost:8080`. A carga inicial cria **25 pontos de Goiânia** (dados de demonstração) na primeira execução e **não duplica** nas seguintes.
 Se o IntelliJ marcar erros no Lombok, ative *Settings > Build > Compiler > Annotation Processors > Enable annotation processing*.
 
 Swagger (documentação e testes dos endpoints): <http://localhost:8080/swagger-ui/index.html>
@@ -44,6 +44,7 @@ Campos de um ponto:
 | Método | URL | O que faz | Respostas |
 |---|---|---|---|
 | GET | `http://localhost:8080/api/v1/pontos` | Lista todos os pontos | 200 |
+| GET | `http://localhost:8080/api/v1/pontos/filtro?filtro=...&page=0&size=10` | Busca por nome ou bairro, com paginação | 200, 400 |
 | GET | `http://localhost:8080/api/v1/pontos/{id}` | Busca um ponto pelo id | 200, 404 |
 | POST | `http://localhost:8080/api/v1/pontos` | Cadastra um ponto | 201, 400 |
 | PUT | `http://localhost:8080/api/v1/pontos/{id}` | Edita um ponto | 200, 400, 404 |
@@ -73,3 +74,23 @@ Todas as respostas de erro têm o mesmo formato:
   ```json
   { "status": 404, "mensagem": "Ponto não encontrado." }
   ```
+
+## Busca com paginação
+
+`GET /api/v1/pontos/filtro` devolve uma página de pontos.
+
+| Parâmetro | Padrão | O que faz |
+|---|---|---|
+| `filtro` | vazio | Procura no **nome** ou no **bairro**, sem diferenciar maiúsculas de minúsculas. Vazio devolve todos os pontos. |
+| `page` | `0` | Número da página (começa em 0). |
+| `size` | `10` | Itens por página. |
+| `sort` | `nome` | Ordenação, por exemplo `sort=bairro,asc` ou `sort=nome,desc`. Campo inexistente responde 400. |
+
+A resposta tem o formato `content` (a lista da página) + `page` (`size`, `number`, `totalElements` e `totalPages`).
+
+### Exemplos de chamadas
+
+1. Sem filtro: `http://localhost:8080/api/v1/pontos/filtro`
+2. Filtrando por bairro: `http://localhost:8080/api/v1/pontos/filtro?filtro=bueno`
+3. Segunda página: `http://localhost:8080/api/v1/pontos/filtro?page=1&size=10`
+4. Ordenando por bairro: `http://localhost:8080/api/v1/pontos/filtro?sort=bairro,asc`
