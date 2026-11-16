@@ -3,7 +3,7 @@
     "name": "instituto-mao-amiga",
     "slug": "instituto-mao-amiga",
     "version": "1.0.0",
-    "orientation": "deafault",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
