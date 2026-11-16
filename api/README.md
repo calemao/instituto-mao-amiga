@@ -1,6 +1,6 @@
 # API do Instituto Mão Amiga
 
-API REST em Spring Boot que gerencia os **pontos de coleta e distribuição** do Instituto Mão Amiga.
+API REST em Spring Boot que gerencia os **pontos de coleta e distribuição** e as **doações** do Instituto Mão Amiga.
 Ela fica nesta pasta (`api/`), dentro do repositório do aplicativo.
 
 ## Tecnologias
