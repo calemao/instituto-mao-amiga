@@ -318,3 +318,74 @@ Respostas obtidas com a API rodando e a carga inicial de 25 pontos.
 ```json
 { "status": 400, "mensagem": "Campo de ordenação inválido." }
 ```
+
+## Doações
+
+Campos de uma doação:
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| `id` | UUID | gerado pela API |
+| `tipoItem` | texto | obrigatório, até 100 caracteres (ex.: "roupas") |
+| `quantidade` | inteiro | obrigatório, maior que zero |
+| `pontoDestino` | texto | obrigatório, até 100 caracteres (nome do ponto) |
+| `criadoEm` | data e hora | gerada pela API no cadastro; **não muda na edição** e é ignorada se vier no corpo |
+
+### Endpoints
+
+| Método | URL | O que faz | Respostas |
+|---|---|---|---|
+| GET | `http://localhost:8080/api/v1/doacoes/filtro?filtro=...&page=0&size=10` | Busca por tipo do item, com paginação | 200, 400 |
+| GET | `http://localhost:8080/api/v1/doacoes/{id}` | Busca uma doação pelo id | 200, 404 |
+| POST | `http://localhost:8080/api/v1/doacoes` | Cadastra uma doação | 201, 400 |
+| PUT | `http://localhost:8080/api/v1/doacoes/{id}` | Edita uma doação (mantém `id` e `criadoEm`) | 200, 400, 404 |
+| DELETE | `http://localhost:8080/api/v1/doacoes/{id}` | Exclui uma doação | 204, 404 |
+
+No `/filtro`, `filtro` procura no **tipo do item** (sem diferenciar maiúsculas de minúsculas; vazio devolve todas). Padrão: `page=0`, `size=10`, `sort=criadoEm,DESC` (da mais nova para a mais antiga). A resposta tem o mesmo formato `content` + `page` dos pontos. Campo de ordenação inexistente responde 400.
+
+Corpo de exemplo para `POST` e `PUT`:
+
+```json
+{
+  "tipoItem": "roupas",
+  "quantidade": 3,
+  "pontoDestino": "Ponto de Coleta Setor Bueno"
+}
+```
+
+Resposta do `POST` (**201**):
+
+```json
+{
+  "id": "033a5e60-1bcc-4952-b08f-5016cb985809",
+  "tipoItem": "roupas",
+  "quantidade": 3,
+  "pontoDestino": "Ponto de Coleta Setor Bueno",
+  "criadoEm": "2026-11-16T16:26:29.787669"
+}
+```
+
+### Erros
+
+Mesmo formato dos pontos:
+
+- **400**: campo obrigatório vazio, quantidade zero ou negativa, ou `sort` inválido (nada é gravado).
+  ```json
+  { "status": 400, "mensagem": "Verifique os campos informados.", "campos": { "quantidade": "A quantidade deve ser maior que zero." } }
+  ```
+- **404**: id inexistente em `GET`, `PUT` ou `DELETE`.
+  ```json
+  { "status": 404, "mensagem": "Doação não encontrada." }
+  ```
+
+### Prints do Swagger (doações)
+
+| Endpoint | Resposta | Print |
+|---|---|---|
+| `GET /api/v1/doacoes/filtro?filtro=roupas` | 200 | ![Filtro: 200](docs/swagger/doacoes-01-filtro-200.png) |
+| `GET /api/v1/doacoes/{id}` | 200 | ![Buscar por id: 200](docs/swagger/doacoes-02-buscar-por-id-200.png) |
+| `POST /api/v1/doacoes` | 201 | ![Cadastrar: 201](docs/swagger/doacoes-03-cadastrar-201.png) |
+| `PUT /api/v1/doacoes/{id}` | 200 | ![Editar: 200](docs/swagger/doacoes-04-editar-200.png) |
+| `DELETE /api/v1/doacoes/{id}` | 204 | ![Excluir: 204](docs/swagger/doacoes-05-excluir-204.png) |
+| `POST /api/v1/doacoes` com quantidade 0 | **400** | ![Erro 400](docs/swagger/doacoes-06-erro-400.png) |
+| `GET /api/v1/doacoes/{id}` com id inexistente | **404** | ![Erro 404](docs/swagger/doacoes-07-erro-404.png) |
