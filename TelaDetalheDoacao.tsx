@@ -1,31 +1,50 @@
-import React from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Doacao, listarDoacoes, excluirDoacao } from './doacoesStorage';
+import { mensagemDoErro, statusDoErro } from './src/services/api';
+import { buscarPorId, Doacao, excluir, formatarDataDoacao } from './src/services/doacoesService';
 
-function formatarData(criadoEm: string) {
-    const data = new Date(criadoEm);
-    return data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
+const NAO_ENCONTRADA = 'Doação não encontrada.';
 
+// Recebe só o id pela navegação e busca a doação na API: os dados nunca vêm da tela anterior.
 export default function TelaDetalheDoacao({ route, navigation }: { route: any; navigation: any }) {
     const { doacaoId } = route.params;
-    const [doacao, setDoacao] = React.useState<Doacao | null>(null);
+    const [doacao, setDoacao] = useState<Doacao | null>(null);
+    const [carregando, setCarregando] = useState(true);
+    const [erro, setErro] = useState('');
+    const [excluindo, setExcluindo] = useState(false);
+    const [erroAcao, setErroAcao] = useState('');
 
+    // Número da busca em andamento: respostas de buscas antigas são descartadas.
+    const requisicaoAtual = useRef(0);
+
+    const carregar = useCallback(async () => {
+        const id = ++requisicaoAtual.current;
+        setCarregando(true);
+        setErro('');
+        try {
+            const encontrada = await buscarPorId(doacaoId);
+            if (id !== requisicaoAtual.current) return;
+            setDoacao(encontrada);
+        } catch (e) {
+            if (id !== requisicaoAtual.current) return;
+            setDoacao(null);
+            setErro(statusDoErro(e) === 404 ? NAO_ENCONTRADA : mensagemDoErro(e));
+        } finally {
+            if (id === requisicaoAtual.current) setCarregando(false);
+        }
+    }, [doacaoId]);
+
+    // Busca de novo toda vez que a tela volta ao foco, por exemplo depois de editar.
     useFocusEffect(
-        React.useCallback(() => {
-            async function carregar() {
-                const lista = await listarDoacoes();
-                const encontrada = lista.find((d) => d.id === doacaoId) ?? null;
-                setDoacao(encontrada);
-            }
+        useCallback(() => {
             carregar();
-        }, [doacaoId])
+        }, [carregar])
     );
 
     function confirmarExclusao() {
-        if (!doacao) return;
+        if (!doacao || excluindo) return;
         Alert.alert(
             'Excluir doação',
             'Tem certeza que deseja excluir esta doação? Essa ação não pode ser desfeita.',
@@ -35,21 +54,48 @@ export default function TelaDetalheDoacao({ route, navigation }: { route: any; n
                     text: 'Excluir',
                     style: 'destructive',
                     onPress: async () => {
-                        await excluirDoacao(doacao.id);
-                        navigation.goBack();
+                        setErroAcao('');
+                        setExcluindo(true);
+                        try {
+                            await excluir(doacao.id);
+                            navigation.goBack();
+                        } catch (e) {
+                            // Falhou: continua na tela e avisa, sem fingir que excluiu.
+                            setErroAcao(
+                                statusDoErro(e) === 404
+                                    ? 'Esta doação já não existe mais.'
+                                    : mensagemDoErro(e)
+                            );
+                            setExcluindo(false);
+                        }
                     },
                 },
             ]
         );
     }
 
-    if (!doacao) {
+    if (carregando && doacao === null) {
         return (
-            <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
-                <ScrollView contentContainerStyle={styles.container}>
-                    <Text style={styles.valor}>Carregando...</Text>
-                </ScrollView>
-            </SafeAreaView>
+            <View style={styles.centro}>
+                <ActivityIndicator size="large" color="#1B3A5C" />
+                <Text style={styles.textoApoio}>Carregando doação...</Text>
+            </View>
+        );
+    }
+
+    if (erro !== '' || doacao === null) {
+        return (
+            <View style={styles.centro}>
+                <Text style={styles.erro}>{erro !== '' ? erro : NAO_ENCONTRADA}</Text>
+                {erro !== NAO_ENCONTRADA && (
+                    <TouchableOpacity style={styles.botaoSecundario} onPress={carregar}>
+                        <Text style={styles.botaoSecundarioTexto}>Tentar novamente</Text>
+                    </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.botaoSecundario} onPress={() => navigation.goBack()}>
+                    <Text style={styles.botaoSecundarioTexto}>Voltar</Text>
+                </TouchableOpacity>
+            </View>
         );
     }
 
@@ -66,20 +112,31 @@ export default function TelaDetalheDoacao({ route, navigation }: { route: any; n
                 <Text style={styles.valor}>{doacao.pontoDestino}</Text>
 
                 <Text style={styles.label}>Registrado em</Text>
-                <Text style={styles.valor}>{formatarData(doacao.criadoEm)}</Text>
+                <Text style={styles.valor}>{formatarDataDoacao(doacao.criadoEm)}</Text>
 
                 <Text style={styles.label}>ID</Text>
                 <Text style={styles.valorPequeno}>{doacao.id}</Text>
 
+                {erroAcao !== '' && <Text style={styles.erroAcao}>{erroAcao}</Text>}
+
                 <TouchableOpacity
-                    style={styles.botaoEditar}
-                    onPress={() => navigation.push('FormDoacao', { doacaoParaEditar: doacao })}
+                    style={[styles.botaoEditar, excluindo && styles.botaoDesabilitado]}
+                    onPress={() => navigation.navigate('FormDoacao', { doacaoId: doacao.id })}
+                    disabled={excluindo}
                 >
                     <Text style={styles.botaoEditarTexto}>Editar doação</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.botaoExcluir} onPress={confirmarExclusao}>
-                    <Text style={styles.botaoExcluirTexto}>Excluir doação</Text>
+                <TouchableOpacity
+                    style={[styles.botaoExcluir, excluindo && styles.botaoDesabilitado]}
+                    onPress={confirmarExclusao}
+                    disabled={excluindo}
+                >
+                    {excluindo ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.botaoExcluirTexto}>Excluir doação</Text>
+                    )}
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
@@ -89,11 +146,18 @@ export default function TelaDetalheDoacao({ route, navigation }: { route: any; n
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#fff' },
     container: { padding: 20 },
+    centro: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
+    textoApoio: { fontSize: 14, color: '#666', textAlign: 'center' },
+    erro: { color: '#C62828', fontSize: 14, textAlign: 'center' },
+    erroAcao: { color: '#C62828', fontSize: 13, marginTop: 20 },
     label: { fontSize: 13, color: '#888', marginTop: 16 },
     valor: { fontSize: 18, fontWeight: '600', color: '#1B3A5C', marginTop: 2 },
     valorPequeno: { fontSize: 12, color: '#999', marginTop: 2 },
+    botaoSecundario: { borderWidth: 1, borderColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 20 },
+    botaoSecundarioTexto: { color: '#1B3A5C', fontWeight: '600' },
     botaoEditar: { backgroundColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', marginTop: 32, minHeight: 44, justifyContent: 'center' },
     botaoEditarTexto: { color: '#fff', fontWeight: 'bold' },
     botaoExcluir: { backgroundColor: '#C62828', padding: 12, borderRadius: 6, alignItems: 'center', marginTop: 12, minHeight: 44, justifyContent: 'center' },
     botaoExcluirTexto: { color: '#fff', fontWeight: 'bold' },
+    botaoDesabilitado: { opacity: 0.6 },
 });
