@@ -2,6 +2,10 @@
 
 Aplicativo móvel (React Native + Expo) e API (Spring Boot) para consultar os **pontos de coleta e distribuição** do Instituto Mão Amiga e registrar **doações**.
 
+> **Um repositório só, com front-end e back-end.** Não há um segundo repositório para a API:
+> - **Front-end** (aplicativo Expo / React Native): na **raiz** deste repositório.
+> - **Back-end** (API Spring Boot): na pasta **[`api/`](api/)** deste mesmo repositório (<https://github.com/calemao/instituto-mao-amiga/tree/main/api>), com o próprio [`api/README.md`](api/README.md).
+
 - **Pontos e doações** ficam na API, com banco de dados. O app só mostra e envia os dados.
 - **Favoritos** ficam no próprio aparelho (só os ids dos pontos).
 
@@ -12,9 +16,9 @@ Projeto N2 individual da disciplina de React Native. Autor: Christian Amsberg Ja
 São dois programas que precisam estar ligados ao mesmo tempo: **a API** (no computador) e **o app** (no celular, pelo Expo Go).
 
 1. Instale o que está em [Requisitos](#requisitos).
-2. Ligue a API: `cd api` e `.\mvnw spring-boot:run` ([detalhes](#1-ligar-a-api)).
+2. Ligue a API (back-end, pasta `api/` deste repositório): `cd api` e `.\mvnw spring-boot:run` ([detalhes](#1-ligar-a-api)).
 3. Descubra o IP do computador (`ipconfig`) e coloque em **`src/services/api.ts`, linha 4** ([detalhes](#3-apontar-o-app-para-a-api-o-passo-que-mais-falha)).
-4. Rode o app: `npm install` e `npx expo start`, e leia o QR code com o Expo Go ([detalhes](#4-ligar-o-app)).
+4. Rode o app (front-end, raiz do repositório): `npm install` e `npx expo start`, e leia o QR code com o Expo Go ([detalhes](#4-ligar-o-app)).
 5. Siga o [roteiro de avaliação](#como-avaliar) (cerca de 10 minutos).
 
 > **Importante:** o IP que está gravado em `src/services/api.ts` é o do computador do autor e **não vai funcionar na sua máquina**. Sem trocá-lo, o app mostra *"Não foi possível conectar à API"*. A API em si pode ser avaliada sozinha, só pelo Swagger, sem o app e sem o IP ([seção da API](#avaliando-só-a-api-sem-o-app)).
