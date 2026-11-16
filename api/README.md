@@ -75,6 +75,21 @@ Todas as respostas de erro têm o mesmo formato:
   { "status": 404, "mensagem": "Ponto não encontrado." }
   ```
 
+### Prints do Swagger
+
+Cada resposta testada em `http://localhost:8080/swagger-ui/index.html`.
+
+| Endpoint | Resposta | Print |
+|---|---|---|
+| `GET /api/v1/pontos` | 200 | ![Listar pontos: 200](docs/swagger/01-listar-200.png) |
+| `GET /api/v1/pontos/{id}` | 200 | ![Buscar por id: 200](docs/swagger/02-buscar-por-id-200.png) |
+| `POST /api/v1/pontos` | 201 | ![Cadastrar ponto: 201](docs/swagger/03-cadastrar-201.png) |
+| `PUT /api/v1/pontos/{id}` | 200 | ![Editar ponto: 200](docs/swagger/04-editar-200.png) |
+| `DELETE /api/v1/pontos/{id}` | 204 | ![Excluir ponto: 204](docs/swagger/05-excluir-204.png) |
+| `POST /api/v1/pontos` com campos vazios | **400** | ![Erro 400](docs/swagger/06-erro-400.png) |
+| `DELETE /api/v1/pontos/{id}` com id inexistente | **404** | ![Erro 404](docs/swagger/07-erro-404.png) |
+| `GET /api/v1/pontos/filtro?filtro=bueno` | 200 | ![Busca paginada: 200](docs/swagger/08-busca-paginada-200.png) |
+
 ## Busca com paginação
 
 `GET /api/v1/pontos/filtro` devolve uma página de pontos.
