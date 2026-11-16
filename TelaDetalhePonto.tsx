@@ -1,14 +1,16 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { mensagemDoErro, statusDoErro } from './src/services/api';
-import { buscarPorId, Ponto } from './src/services/pontosService';
+import { buscarPorId, excluir, Ponto } from './src/services/pontosService';
 
-export default function TelaDetalhePonto({ route }: { route: any }) {
+export default function TelaDetalhePonto({ navigation, route }: { navigation: any; route: any }) {
     const { pontoId } = route.params;
     const [ponto, setPonto] = useState<Ponto | null>(null);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState('');
+    const [erroAcao, setErroAcao] = useState('');
+    const [excluindo, setExcluindo] = useState(false);
 
     const carregar = useCallback(async () => {
         try {
@@ -28,6 +30,28 @@ export default function TelaDetalhePonto({ route }: { route: any }) {
             carregar();
         }, [carregar])
     );
+
+    function pedirConfirmacaoExclusao() {
+        if (!ponto) return;
+        Alert.alert('Excluir ponto', `Deseja excluir "${ponto.nome}"? Essa ação não pode ser desfeita.`, [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Excluir', style: 'destructive', onPress: confirmarExclusao },
+        ]);
+    }
+
+    async function confirmarExclusao() {
+        setErroAcao('');
+        setExcluindo(true);
+        try {
+            await excluir(pontoId);
+            navigation.goBack();
+        } catch (e) {
+            // Falhou: avisa e permanece na tela, sem fingir que o ponto foi excluído.
+            setErroAcao(mensagemDoErro(e));
+        } finally {
+            setExcluindo(false);
+        }
+    }
 
     if (carregando) {
         return (
@@ -63,6 +87,26 @@ export default function TelaDetalhePonto({ route }: { route: any }) {
             <Text style={styles.detalhe}>Bairro: {ponto.bairro}</Text>
             <Text style={styles.detalhe}>{ponto.horario}</Text>
             <Text style={styles.tipo}>Ponto de {ponto.tipo}</Text>
+
+            {erroAcao !== '' && <Text style={styles.erro}>{erroAcao}</Text>}
+
+            <TouchableOpacity
+                style={styles.botaoPrimario}
+                onPress={() => navigation.navigate('FormPonto', { pontoId: ponto.id })}
+            >
+                <Text style={styles.botaoPrimarioTexto}>Editar ponto</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={[styles.botaoExcluir, excluindo && styles.botaoDesabilitado]}
+                onPress={pedirConfirmacaoExclusao}
+                disabled={excluindo}
+            >
+                {excluindo ? (
+                    <ActivityIndicator color="#C62828" />
+                ) : (
+                    <Text style={styles.botaoExcluirTexto}>Excluir ponto</Text>
+                )}
+            </TouchableOpacity>
         </View>
     );
 }
@@ -74,6 +118,11 @@ const styles = StyleSheet.create({
     detalhe: { fontSize: 14, textAlign: 'center', color: '#555', marginBottom: 8 },
     tipo: { fontSize: 14, fontWeight: '600', textAlign: 'center', color: '#2E7D32', marginTop: 8 },
     erro: { color: '#C62828', fontSize: 15, textAlign: 'center', marginBottom: 12 },
+    botaoPrimario: { backgroundColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', minHeight: 44, justifyContent: 'center', width: '100%', marginTop: 16 },
+    botaoPrimarioTexto: { color: '#fff', fontWeight: 'bold' },
+    botaoExcluir: { borderWidth: 1, borderColor: '#C62828', padding: 12, borderRadius: 6, alignItems: 'center', minHeight: 44, justifyContent: 'center', width: '100%', marginTop: 8 },
+    botaoExcluirTexto: { color: '#C62828', fontWeight: '600' },
+    botaoDesabilitado: { opacity: 0.6 },
     botaoSecundario: { borderWidth: 1, borderColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', minHeight: 44, justifyContent: 'center', minWidth: 180 },
     botaoSecundarioTexto: { color: '#1B3A5C', fontWeight: '600' },
 });

@@ -175,8 +175,13 @@ export default function TelaListaPontos({ navigation }: { navigation: any }) {
                     disableFullscreenUI
                 />
                 <View style={styles.linhaBotoes}>
-                    <TouchableOpacity style={styles.botaoPrimario} onPress={() => navigation.navigate('FormDoacao')}>
-                        <Text style={styles.botaoPrimarioTexto}>Registrar doação</Text>
+                    <TouchableOpacity style={styles.botaoPrimario} onPress={() => navigation.navigate('FormPonto')}>
+                        <Text style={styles.botaoPrimarioTexto}>Novo ponto</Text>
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.linhaBotoes}>
+                    <TouchableOpacity style={styles.botaoSecundario} onPress={() => navigation.navigate('FormDoacao')}>
+                        <Text style={styles.botaoSecundarioTexto}>Registrar doação</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.botaoSecundario} onPress={() => navigation.navigate('MinhasDoacoes')}>
                         <Text style={styles.botaoSecundarioTexto}>Minhas doações</Text>
@@ -192,7 +197,7 @@ const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#fff' },
     topo: { padding: 16, paddingBottom: 8 },
     input: { borderWidth: 1, borderColor: '#CCC', borderRadius: 6, padding: 10, fontSize: 14, width: '100%', marginBottom: 8, minHeight: 44 },
-    linhaBotoes: { flexDirection: 'row', gap: 8 },
+    linhaBotoes: { flexDirection: 'row', gap: 8, marginBottom: 8 },
     botaoPrimario: { flex: 1, backgroundColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
     botaoPrimarioTexto: { color: '#fff', fontWeight: 'bold' },
     botaoSecundario: { flex: 1, borderWidth: 1, borderColor: '#1B3A5C', padding: 12, borderRadius: 6, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
